@@ -115,7 +115,7 @@
     <h1>Absensi</h1>
     <div style="text-align:right;">
       <div class="clock" id="clock">--:--:--</div>
-      <button id="settings-btn" style="border:none; background:none; color:var(--teal); font-size:11px; font-weight:600; cursor:pointer; padding:2px 0;">Sambungkan Sheets</button>
+      <div style="font-size:11px; font-weight:600; color:var(--teal); padding:2px 0;">Tersambung ke Google Sheets</div>
     </div>
   </header>
 
@@ -155,6 +155,7 @@
       <input type="text" id="search" placeholder="Cari nama…">
       <button id="export-btn">Unduh Excel</button>
     </div>
+    <p style="font-size:12px; color:#7A8985; margin:-6px 0 14px;">Tabel ini hanya riwayat absen dari HP ini. Rekap lengkap semua staf ada di Google Sheets.</p>
     <div class="card" style="padding:0; overflow-x:auto;">
       <table id="rekap-table">
         <thead>
@@ -170,71 +171,23 @@
 <div class="toast" id="toast"></div>
 <div class="lightbox" id="lightbox"><img id="lightbox-img"></div>
 
-<div class="lightbox" id="settings-modal">
-  <div class="card" style="max-width:420px; width:100%; background:#fff;">
-    <label for="sheets-url">URL Web App Apps Script</label>
-    <input type="text" id="sheets-url" placeholder="https://script.google.com/macros/s/.../exec">
-    <div id="sheets-status" style="font-size:12px; color:#7A8985; margin:-6px 0 14px;"></div>
-    <div style="display:flex; gap:8px;">
-      <button type="button" id="sheets-save" style="flex:1; background:var(--ink); color:#fff; border:none; border-radius:10px; padding:11px; font-weight:600; font-family:var(--font); cursor:pointer;">Simpan</button>
-      <button type="button" id="sheets-close" style="flex:1; background:#F2F5F4; color:var(--ink); border:1px solid var(--border); border-radius:10px; padding:11px; font-weight:600; font-family:var(--font); cursor:pointer;">Tutup</button>
-    </div>
-  </div>
-</div>
-
 <script>
 const STORAGE_KEY = 'attendance-records';
-const SETTINGS_KEY = 'settings:sheets-url';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzr5OqGHcRGHNe7mEfIJTXCVoUcC8vTcXjkzxfRNfIlqJfO3oTI0SZMZn764OTXk6OkhA/exec';
 let currentLoc = null;
 let currentPhoto = null;
 let currentSession = null;
-let sheetsUrl = '';
-
-async function loadSheetsUrl(){
-  try{
-    const res = await window.storage.get(SETTINGS_KEY, true);
-    sheetsUrl = res ? res.value : '';
-  }catch(e){ sheetsUrl = ''; }
-  updateSheetsStatusLabel();
-}
-function updateSheetsStatusLabel(){
-  const btn = document.getElementById('settings-btn');
-  btn.textContent = sheetsUrl ? 'Tersambung ke Sheets' : 'Sambungkan Sheets';
-  btn.style.color = sheetsUrl ? 'var(--teal)' : '#B54A3F';
-}
-document.getElementById('settings-btn').addEventListener('click', ()=>{
-  document.getElementById('sheets-url').value = sheetsUrl;
-  document.getElementById('sheets-status').textContent = sheetsUrl ? 'Tersambung. Setiap absen akan otomatis masuk ke Google Sheets.' : 'Belum tersambung. Absen hanya tersimpan di aplikasi ini.';
-  document.getElementById('settings-modal').classList.add('show');
-});
-document.getElementById('sheets-close').addEventListener('click', ()=>{
-  document.getElementById('settings-modal').classList.remove('show');
-});
-document.getElementById('sheets-save').addEventListener('click', async ()=>{
-  const val = document.getElementById('sheets-url').value.trim();
-  try{
-    await window.storage.set(SETTINGS_KEY, val, true);
-    sheetsUrl = val;
-    updateSheetsStatusLabel();
-    showToast(val ? 'URL Google Sheets disimpan.' : 'Sambungan Sheets dihapus.');
-    document.getElementById('settings-modal').classList.remove('show');
-  }catch(e){
-    showToast('Gagal menyimpan URL.');
-  }
-});
-loadSheetsUrl();
 
 async function sendToSheets(record){
-  if(!sheetsUrl) return;
   try{
-    await fetch(sheetsUrl, {
+    await fetch(SHEETS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(record)
     });
   }catch(e){
     // Gagal kirim ke Sheets tidak menggagalkan penyimpanan lokal
-    showToast('Tersimpan di aplikasi, tapi gagal kirim ke Sheets.');
+    showToast('Tersimpan di HP ini, tapi gagal kirim ke Sheets. Cek koneksi internet.');
   }
 }
 
@@ -345,10 +298,10 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-async function getRecords(){
+function getRecords(){
   try{
-    const res = await window.storage.get(STORAGE_KEY, true);
-    return res ? JSON.parse(res.value) : [];
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
   }catch(e){
     return [];
   }
@@ -370,9 +323,9 @@ document.getElementById('submit-btn').addEventListener('click', async ()=>{
       alamat: currentLoc.alamat,
       foto: currentPhoto
     };
-    const records = await getRecords();
+    const records = getRecords();
     records.push(record);
-    await window.storage.set(STORAGE_KEY, JSON.stringify(records), true);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
     sendToSheets(record);
     showToast('Absen '+ (currentSession==='pagi'?'pagi':'sore') +' tersimpan.');
     // reset form
@@ -394,8 +347,8 @@ document.getElementById('submit-btn').addEventListener('click', async ()=>{
 
 // rekap
 let allRecords = [];
-async function loadRekap(){
-  allRecords = await getRecords();
+function loadRekap(){
+  allRecords = getRecords();
   allRecords.sort((a,b)=> new Date(b.waktu)-new Date(a.waktu));
   renderRekap(allRecords);
 }
