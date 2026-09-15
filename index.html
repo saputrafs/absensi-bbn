@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Absensi</title>
+<title>Absensi BBN</title>
 <style>
   :root{
     --ink:#16302B;
@@ -25,9 +25,43 @@
     min-height:100vh;
   }
   .wrap{max-width:640px; margin:0 auto; padding:20px 18px 60px;}
-  header{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:18px; padding-top:6px;}
-  header h1{font-family:var(--font-head); font-size:22px; font-weight:700; margin:0; letter-spacing:-0.01em;}
-  header .clock{font-size:13px; color:var(--teal); font-variant-numeric:tabular-nums;}
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 25px;
+    background:#fff;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
+
+.header-left{
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+.header-left img{
+    width:60px;
+    height:60px;
+    object-fit:contain;
+}
+
+.header-left h1{
+    margin:0;
+    font-size:28px;
+    color:#1e3a8a;
+}
+
+.header-right{
+    text-align:right;
+}
+
+.clock{
+    font-size:24px;
+    font-weight:700;
+    color:#111827;
+}
   nav.tabs{display:flex; gap:6px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:4px; margin-bottom:20px;}
   nav.tabs button{flex:1; border:none; background:transparent; padding:10px 8px; font-family:var(--font); font-size:14px; font-weight:600; color:#5C6B66; border-radius:9px; cursor:pointer;}
   nav.tabs button.active{background:var(--ink); color:#fff;}
@@ -111,13 +145,16 @@
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>Absensi</h1>
-    <div style="text-align:right;">
-      <div class="clock" id="clock">--:--:--</div>
-      <div style="font-size:11px; font-weight:600; color:var(--teal); padding:2px 0;">Tersambung ke Google Sheets</div>
+<header>
+    <div class="header-left">
+        <img src="http://static-server.atw-corp.com/bbn/BBN22.webp" alt="BBN Logo">
+        <h1>Absensi BBN</h1>
     </div>
-  </header>
+
+    <div class="header-right">
+        <div class="clock" id="clock">--:--:--</div>
+    </div>
+</header>
 
   <nav class="tabs">
     <button class="active" data-tab="absen">Absen</button>
