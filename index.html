@@ -24,6 +24,11 @@
     margin:0; font-family:var(--font); background:var(--bg); color:var(--ink);
     min-height:100vh;
   }
+  .session-row-4{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
   .wrap{max-width:640px; margin:0 auto; padding:20px 18px 60px;}
   header{
     display:flex;
@@ -166,10 +171,23 @@
       <input type="text" id="nama" placeholder="Tulis nama lengkap">
 
       <label>Sesi</label>
-      <div class="session-row">
-        <button class="session-btn" id="btn-pagi" type="button">Pagi<span class="time">masuk</span></button>
-        <button class="session-btn" id="btn-sore" type="button">Sore<span class="time">pulang</span></button>
-      </div>
+<div class="session-row session-row-4">
+  <button class="session-btn" id="btn-pagi-masuk" type="button">
+    Pagi<span class="time">Masuk</span>
+  </button>
+
+  <button class="session-btn" id="btn-sore-masuk" type="button">
+    Sore<span class="time">Masuk</span>
+  </button>
+
+  <button class="session-btn" id="btn-sore-pulang" type="button">
+    Sore<span class="time">Pulang</span>
+  </button>
+
+  <button class="session-btn" id="btn-malam-pulang" type="button">
+    Malam<span class="time">Pulang</span>
+  </button>
+</div>
 
       <label>Lokasi</label>
       <div class="status-line" id="loc-status"><span class="dot"></span><span id="loc-text">Mengambil lokasi…</span></div>
@@ -248,12 +266,27 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
 // session select
 function selectSession(s){
   currentSession = s;
-  document.getElementById('btn-pagi').classList.toggle('selected', s==='pagi');
-  document.getElementById('btn-sore').classList.toggle('selected', s==='sore');
+
+  document.querySelectorAll('.session-btn').forEach(btn=>{
+    btn.classList.remove('selected');
+  });
+
+  document.getElementById('btn-' + s).classList.add('selected');
+
   updateSubmitState();
 }
-document.getElementById('btn-pagi').addEventListener('click', ()=>selectSession('pagi'));
-document.getElementById('btn-sore').addEventListener('click', ()=>selectSession('sore'));
+
+document.getElementById('btn-pagi-masuk')
+  .addEventListener('click', ()=>selectSession('pagi-masuk'));
+
+document.getElementById('btn-sore-masuk')
+  .addEventListener('click', ()=>selectSession('sore-masuk'));
+
+document.getElementById('btn-sore-pulang')
+  .addEventListener('click', ()=>selectSession('sore-pulang'));
+
+document.getElementById('btn-malam-pulang')
+  .addEventListener('click', ()=>selectSession('malam-pulang'));
 
 // geolocation
 function getLocation(){
@@ -367,8 +400,9 @@ document.getElementById('submit-btn').addEventListener('click', async ()=>{
     // reset form
     document.getElementById('nama').value='';
     currentSession=null; currentPhoto=null;
-    document.getElementById('btn-pagi').classList.remove('selected');
-    document.getElementById('btn-sore').classList.remove('selected');
+ document.querySelectorAll('.session-btn').forEach(btn=>{
+  btn.classList.remove('selected');
+});
     document.getElementById('photo-preview').style.display='none';
     document.getElementById('photo-placeholder').style.display='block';
     document.getElementById('photo-btn').textContent='Buka kamera';
@@ -400,7 +434,14 @@ function renderRekap(records){
     const lokasiText = r.alamat ? r.alamat.split(',').slice(0,2).join(',') : `${r.lat}, ${r.lng}`;
     tr.innerHTML = `
       <td>${escapeHtml(r.nama)}</td>
-      <td><span class="pill ${r.sesi}">${r.sesi==='pagi'?'Pagi':'Sore'}</span></td>
+      <td><span class="pill">
+  ${
+    r.sesi === 'pagi-masuk' ? 'Pagi Masuk' :
+    r.sesi === 'sore-masuk' ? 'Sore Masuk' :
+    r.sesi === 'sore-pulang' ? 'Sore Pulang' :
+    'Malam Pulang'
+  }
+</span></td>
       <td>${waktu}</td>
       <td class="coord">${escapeHtml(lokasiText)}</td>
       <td class="foto">${r.foto?`<img src="${r.foto}" data-full="${r.foto}">`:''}</td>
