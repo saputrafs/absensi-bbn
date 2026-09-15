@@ -392,16 +392,18 @@ document.getElementById('search').addEventListener('input', (e)=>{
 
 document.getElementById('export-btn').addEventListener('click', ()=>{
   if(allRecords.length===0){ showToast('Belum ada data untuk diunduh.'); return; }
-  const header = ['Nama','Sesi','Tanggal','Jam','Latitude','Longitude','Alamat'];
+  const header = ['Nama','Sesi','Tanggal','Jam','Latitude','Longitude','Alamat','Link Peta'];
   const rows = allRecords.map(r=>{
     const d = new Date(r.waktu);
+    const linkPeta = (r.lat && r.lng) ? `https://www.google.com/maps?q=${r.lat},${r.lng}` : '';
     return [
       r.nama,
       r.sesi==='pagi'?'Pagi':'Sore',
       d.toLocaleDateString('id-ID'),
       d.toLocaleTimeString('id-ID'),
       r.lat, r.lng,
-      r.alamat||''
+      r.alamat||'',
+      linkPeta
     ];
   });
   const csv = [header, ...rows].map(row=>
