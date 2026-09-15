@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absensi</title>
+<style>
+  :root{
+    --ink:#16302B;
+    --teal:#2F6F63;
+    --teal-soft:#E4EDEA;
+    --amber:#E8A33D;
+    --amber-dark:#C8801F;
+    --bg:#F2F5F4;
+    --card:#FFFFFF;
+    --border:#D8DDD9;
+    --red:#B54A3F;
+    --font: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-head: 'Space Grotesk', var(--font);
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:var(--font); background:var(--bg); color:var(--ink);
+    min-height:100vh;
+  }
+  .wrap{max-width:640px; margin:0 auto; padding:20px 18px 60px;}
+  header{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:18px; padding-top:6px;}
+  header h1{font-family:var(--font-head); font-size:22px; font-weight:700; margin:0; letter-spacing:-0.01em;}
+  header .clock{font-size:13px; color:var(--teal); font-variant-numeric:tabular-nums;}
+  nav.tabs{display:flex; gap:6px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:4px; margin-bottom:20px;}
+  nav.tabs button{flex:1; border:none; background:transparent; padding:10px 8px; font-family:var(--font); font-size:14px; font-weight:600; color:#5C6B66; border-radius:9px; cursor:pointer;}
+  nav.tabs button.active{background:var(--ink); color:#fff;}
+  section.view{display:none;}
+  section.view.active{display:block;}
+
+  .card{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;}
+  .card + .card{margin-top:14px;}
+  label{display:block; font-size:13px; font-weight:600; color:#3E4C47; margin-bottom:6px;}
+  input[type=text]{
+    width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:10px;
+    font-family:var(--font); font-size:15px; margin-bottom:14px; background:#FBFCFB;
+  }
+  input[type=text]:focus{outline:2px solid var(--teal); outline-offset:1px;}
+
+  .session-row{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;}
+  .session-btn{
+    padding:16px 10px; border-radius:14px; border:1.5px solid var(--border); background:#fff;
+    font-family:var(--font-head); font-weight:600; font-size:15px; cursor:pointer; color:var(--ink);
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  .session-btn span.time{font-size:11px; font-weight:500; color:#7A8985;}
+  .session-btn.selected{border-color:var(--teal); background:var(--teal-soft); color:var(--teal);}
+  .session-btn.selected span.time{color:var(--teal);}
+
+  .status-line{display:flex; align-items:flex-start; gap:8px; font-size:13px; padding:10px 12px; border-radius:10px; background:#F6F8F7; margin-bottom:10px; line-height:1.4;}
+  .status-line.ok{background:var(--teal-soft); color:var(--teal);}
+  .status-line.err{background:#FBECE9; color:var(--red);}
+  .dot{width:7px; height:7px; border-radius:50%; margin-top:5px; flex:none; background:#9AA6A2;}
+  .dot.ok{background:var(--teal);}
+  .dot.err{background:var(--red);}
+
+  .photo-box{
+    border:1.5px dashed var(--border); border-radius:14px; padding:16px; text-align:center; margin-bottom:14px;
+    background:#FBFCFB;
+  }
+  .photo-box img{max-width:100%; max-height:220px; border-radius:10px; display:block; margin:0 auto 10px;}
+  .photo-box button{
+    background:var(--ink); color:#fff; border:none; border-radius:10px; padding:10px 16px;
+    font-family:var(--font); font-weight:600; font-size:14px; cursor:pointer;
+  }
+  input[type=file]{display:none;}
+
+  .submit-btn{
+    width:100%; padding:15px; border:none; border-radius:12px; background:var(--amber); color:#3A2508;
+    font-family:var(--font-head); font-weight:700; font-size:16px; cursor:pointer; margin-top:4px;
+  }
+  .submit-btn:disabled{background:#E5DED0; color:#9C9484; cursor:not-allowed;}
+  .submit-btn:not(:disabled):active{background:var(--amber-dark);}
+
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--ink); color:#fff;
+    padding:12px 18px; border-radius:10px; font-size:14px; opacity:0; pointer-events:none; transition:opacity .25s, bottom .25s;
+  }
+  .toast.show{opacity:1; bottom:34px;}
+
+  .rekap-toolbar{display:flex; gap:8px; margin-bottom:14px;}
+  .rekap-toolbar input[type=text]{margin-bottom:0;}
+  .rekap-toolbar button{
+    background:var(--teal); color:#fff; border:none; border-radius:10px; padding:0 16px;
+    font-family:var(--font); font-weight:600; font-size:14px; cursor:pointer; white-space:nowrap;
+  }
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; font-family:var(--font-head); font-weight:600; font-size:12px; color:#5C6B66; padding:8px 6px; border-bottom:1.5px solid var(--border);}
+  td{padding:9px 6px; border-bottom:1px solid var(--border); vertical-align:middle;}
+  td.foto img{width:36px; height:36px; border-radius:8px; object-fit:cover; cursor:pointer;}
+  .pill{display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600;}
+  .pill.pagi{background:#FBEFDA; color:var(--amber-dark);}
+  .pill.sore{background:var(--teal-soft); color:var(--teal);}
+  .coord{color:#5C6B66; font-size:12px;}
+  .empty{text-align:center; padding:36px 10px; color:#7A8985; font-size:14px;}
+
+  .lightbox{position:fixed; inset:0; background:rgba(15,25,22,.82); display:none; align-items:center; justify-content:center; z-index:50; padding:20px;}
+  .lightbox.show{display:flex;}
+  .lightbox img{max-width:100%; max-height:85vh; border-radius:12px;}
+
+  @media (max-width:420px){
+    .rekap-toolbar{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Absensi</h1>
+    <div style="text-align:right;">
+      <div class="clock" id="clock">--:--:--</div>
+      <button id="settings-btn" style="border:none; background:none; color:var(--teal); font-size:11px; font-weight:600; cursor:pointer; padding:2px 0;">Sambungkan Sheets</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="active" data-tab="absen">Absen</button>
+    <button data-tab="rekap">Rekap</button>
+  </nav>
+
+  <section class="view active" id="view-absen">
+    <div class="card">
+      <label for="nama">Nama</label>
+      <input type="text" id="nama" placeholder="Tulis nama lengkap">
+
+      <label>Sesi</label>
+      <div class="session-row">
+        <button class="session-btn" id="btn-pagi" type="button">Pagi<span class="time">masuk</span></button>
+        <button class="session-btn" id="btn-sore" type="button">Sore<span class="time">pulang</span></button>
+      </div>
+
+      <label>Lokasi</label>
+      <div class="status-line" id="loc-status"><span class="dot"></span><span id="loc-text">Mengambil lokasi…</span></div>
+
+      <label>Foto</label>
+      <div class="photo-box" id="photo-box">
+        <div id="photo-placeholder" style="font-size:13px; color:#7A8985; margin-bottom:10px;">Ambil foto untuk bukti kehadiran</div>
+        <img id="photo-preview" style="display:none;">
+        <input type="file" id="photo-input" accept="image/*" capture="environment">
+        <button type="button" id="photo-btn">Buka kamera</button>
+      </div>
+
+      <button class="submit-btn" id="submit-btn" disabled>Simpan absen</button>
+    </div>
+  </section>
+
+  <section class="view" id="view-rekap">
+    <div class="rekap-toolbar">
+      <input type="text" id="search" placeholder="Cari nama…">
+      <button id="export-btn">Unduh Excel</button>
+    </div>
+    <div class="card" style="padding:0; overflow-x:auto;">
+      <table id="rekap-table">
+        <thead>
+          <tr><th>Nama</th><th>Sesi</th><th>Waktu</th><th>Lokasi</th><th>Foto</th></tr>
+        </thead>
+        <tbody id="rekap-body"></tbody>
+      </table>
+      <div class="empty" id="rekap-empty" style="display:none;">Belum ada data absensi.</div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="lightbox" id="lightbox"><img id="lightbox-img"></div>
+
+<div class="lightbox" id="settings-modal">
+  <div class="card" style="max-width:420px; width:100%; background:#fff;">
+    <label for="sheets-url">URL Web App Apps Script</label>
+    <input type="text" id="sheets-url" placeholder="https://script.google.com/macros/s/.../exec">
+    <div id="sheets-status" style="font-size:12px; color:#7A8985; margin:-6px 0 14px;"></div>
+    <div style="display:flex; gap:8px;">
+      <button type="button" id="sheets-save" style="flex:1; background:var(--ink); color:#fff; border:none; border-radius:10px; padding:11px; font-weight:600; font-family:var(--font); cursor:pointer;">Simpan</button>
+      <button type="button" id="sheets-close" style="flex:1; background:#F2F5F4; color:var(--ink); border:1px solid var(--border); border-radius:10px; padding:11px; font-weight:600; font-family:var(--font); cursor:pointer;">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'attendance-records';
+const SETTINGS_KEY = 'settings:sheets-url';
+let currentLoc = null;
+let currentPhoto = null;
+let currentSession = null;
+let sheetsUrl = '';
+
+async function loadSheetsUrl(){
+  try{
+    const res = await window.storage.get(SETTINGS_KEY, true);
+    sheetsUrl = res ? res.value : '';
+  }catch(e){ sheetsUrl = ''; }
+  updateSheetsStatusLabel();
+}
+function updateSheetsStatusLabel(){
+  const btn = document.getElementById('settings-btn');
+  btn.textContent = sheetsUrl ? 'Tersambung ke Sheets' : 'Sambungkan Sheets';
+  btn.style.color = sheetsUrl ? 'var(--teal)' : '#B54A3F';
+}
+document.getElementById('settings-btn').addEventListener('click', ()=>{
+  document.getElementById('sheets-url').value = sheetsUrl;
+  document.getElementById('sheets-status').textContent = sheetsUrl ? 'Tersambung. Setiap absen akan otomatis masuk ke Google Sheets.' : 'Belum tersambung. Absen hanya tersimpan di aplikasi ini.';
+  document.getElementById('settings-modal').classList.add('show');
+});
+document.getElementById('sheets-close').addEventListener('click', ()=>{
+  document.getElementById('settings-modal').classList.remove('show');
+});
+document.getElementById('sheets-save').addEventListener('click', async ()=>{
+  const val = document.getElementById('sheets-url').value.trim();
+  try{
+    await window.storage.set(SETTINGS_KEY, val, true);
+    sheetsUrl = val;
+    updateSheetsStatusLabel();
+    showToast(val ? 'URL Google Sheets disimpan.' : 'Sambungan Sheets dihapus.');
+    document.getElementById('settings-modal').classList.remove('show');
+  }catch(e){
+    showToast('Gagal menyimpan URL.');
+  }
+});
+loadSheetsUrl();
+
+async function sendToSheets(record){
+  if(!sheetsUrl) return;
+  try{
+    await fetch(sheetsUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(record)
+    });
+  }catch(e){
+    // Gagal kirim ke Sheets tidak menggagalkan penyimpanan lokal
+    showToast('Tersimpan di aplikasi, tapi gagal kirim ke Sheets.');
+  }
+}
+
+// clock
+function tick(){
+  const d = new Date();
+  document.getElementById('clock').textContent = d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+tick(); setInterval(tick,1000);
+
+// tabs
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('section.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='rekap') loadRekap();
+  });
+});
+
+// session select
+function selectSession(s){
+  currentSession = s;
+  document.getElementById('btn-pagi').classList.toggle('selected', s==='pagi');
+  document.getElementById('btn-sore').classList.toggle('selected', s==='sore');
+  updateSubmitState();
+}
+document.getElementById('btn-pagi').addEventListener('click', ()=>selectSession('pagi'));
+document.getElementById('btn-sore').addEventListener('click', ()=>selectSession('sore'));
+
+// geolocation
+function getLocation(){
+  const statusEl = document.getElementById('loc-status');
+  const textEl = document.getElementById('loc-text');
+  if(!navigator.geolocation){
+    statusEl.className = 'status-line err';
+    statusEl.querySelector('.dot').className='dot err';
+    textEl.textContent = 'Perangkat tidak mendukung lokasi.';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(async (pos)=>{
+    const lat = pos.coords.latitude.toFixed(5);
+    const lng = pos.coords.longitude.toFixed(5);
+    currentLoc = { lat, lng, alamat: null };
+    statusEl.className = 'status-line ok';
+    statusEl.querySelector('.dot').className='dot ok';
+    textEl.textContent = `Koordinat ditemukan: ${lat}, ${lng}`;
+    updateSubmitState();
+    try{
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16`);
+      const data = await res.json();
+      if(data && data.display_name){
+        currentLoc.alamat = data.display_name;
+        textEl.textContent = data.display_name;
+      }
+    }catch(e){ /* biarkan hanya koordinat */ }
+  }, (err)=>{
+    statusEl.className = 'status-line err';
+    statusEl.querySelector('.dot').className='dot err';
+    textEl.textContent = 'Izin lokasi ditolak atau gagal diambil. Aktifkan lokasi lalu muat ulang.';
+  }, { enableHighAccuracy:true, timeout:10000 });
+}
+getLocation();
+
+// photo
+document.getElementById('photo-btn').addEventListener('click', ()=>{
+  document.getElementById('photo-input').click();
+});
+document.getElementById('photo-input').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const maxW = 480;
+      const scale = Math.min(1, maxW/img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width*scale;
+      canvas.height = img.height*scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      currentPhoto = canvas.toDataURL('image/jpeg', 0.6);
+      const preview = document.getElementById('photo-preview');
+      preview.src = currentPhoto;
+      preview.style.display='block';
+      document.getElementById('photo-placeholder').style.display='none';
+      document.getElementById('photo-btn').textContent = 'Ganti foto';
+      updateSubmitState();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function updateSubmitState(){
+  const nama = document.getElementById('nama').value.trim();
+  const ready = nama && currentSession && currentLoc && currentPhoto;
+  document.getElementById('submit-btn').disabled = !ready;
+}
+document.getElementById('nama').addEventListener('input', updateSubmitState);
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+async function getRecords(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, true);
+    return res ? JSON.parse(res.value) : [];
+  }catch(e){
+    return [];
+  }
+}
+
+document.getElementById('submit-btn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan…';
+  try{
+    const nama = document.getElementById('nama').value.trim();
+    const record = {
+      id: Date.now()+'-'+Math.random().toString(36).slice(2,7),
+      nama,
+      sesi: currentSession,
+      waktu: new Date().toISOString(),
+      lat: currentLoc.lat,
+      lng: currentLoc.lng,
+      alamat: currentLoc.alamat,
+      foto: currentPhoto
+    };
+    const records = await getRecords();
+    records.push(record);
+    await window.storage.set(STORAGE_KEY, JSON.stringify(records), true);
+    sendToSheets(record);
+    showToast('Absen '+ (currentSession==='pagi'?'pagi':'sore') +' tersimpan.');
+    // reset form
+    document.getElementById('nama').value='';
+    currentSession=null; currentPhoto=null;
+    document.getElementById('btn-pagi').classList.remove('selected');
+    document.getElementById('btn-sore').classList.remove('selected');
+    document.getElementById('photo-preview').style.display='none';
+    document.getElementById('photo-placeholder').style.display='block';
+    document.getElementById('photo-btn').textContent='Buka kamera';
+    document.getElementById('photo-input').value='';
+  }catch(e){
+    showToast('Gagal menyimpan, coba lagi.');
+  }finally{
+    btn.textContent = 'Simpan absen';
+    updateSubmitState();
+  }
+});
+
+// rekap
+let allRecords = [];
+async function loadRekap(){
+  allRecords = await getRecords();
+  allRecords.sort((a,b)=> new Date(b.waktu)-new Date(a.waktu));
+  renderRekap(allRecords);
+}
+function renderRekap(records){
+  const body = document.getElementById('rekap-body');
+  const empty = document.getElementById('rekap-empty');
+  body.innerHTML='';
+  if(records.length===0){ empty.style.display='block'; return; }
+  empty.style.display='none';
+  records.forEach(r=>{
+    const tr = document.createElement('tr');
+    const waktu = new Date(r.waktu).toLocaleString('id-ID',{dateStyle:'medium', timeStyle:'short'});
+    const lokasiText = r.alamat ? r.alamat.split(',').slice(0,2).join(',') : `${r.lat}, ${r.lng}`;
+    tr.innerHTML = `
+      <td>${escapeHtml(r.nama)}</td>
+      <td><span class="pill ${r.sesi}">${r.sesi==='pagi'?'Pagi':'Sore'}</span></td>
+      <td>${waktu}</td>
+      <td class="coord">${escapeHtml(lokasiText)}</td>
+      <td class="foto">${r.foto?`<img src="${r.foto}" data-full="${r.foto}">`:''}</td>
+    `;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('img[data-full]').forEach(img=>{
+    img.addEventListener('click', ()=>{
+      document.getElementById('lightbox-img').src = img.dataset.full;
+      document.getElementById('lightbox').classList.add('show');
+    });
+  });
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+document.getElementById('lightbox').addEventListener('click', ()=>{
+  document.getElementById('lightbox').classList.remove('show');
+});
+
+document.getElementById('search').addEventListener('input', (e)=>{
+  const q = e.target.value.trim().toLowerCase();
+  renderRekap(allRecords.filter(r=>r.nama.toLowerCase().includes(q)));
+});
+
+document.getElementById('export-btn').addEventListener('click', ()=>{
+  if(allRecords.length===0){ showToast('Belum ada data untuk diunduh.'); return; }
+  const header = ['Nama','Sesi','Tanggal','Jam','Latitude','Longitude','Alamat'];
+  const rows = allRecords.map(r=>{
+    const d = new Date(r.waktu);
+    return [
+      r.nama,
+      r.sesi==='pagi'?'Pagi':'Sore',
+      d.toLocaleDateString('id-ID'),
+      d.toLocaleTimeString('id-ID'),
+      r.lat, r.lng,
+      r.alamat||''
+    ];
+  });
+  const csv = [header, ...rows].map(row=>
+    row.map(cell=>`"${String(cell).replace(/"/g,'""')}"`).join(',')
+  ).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'rekap-absensi.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Rekap diunduh (buka dengan Excel).');
+});
+</script>
+</body>
+</html>
